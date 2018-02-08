@@ -21,8 +21,6 @@ constexpr size_type mask = (1 << bits) - 1;
 
 alignas(32) size_type bit[bytes][1 << bits] = {0};
 
-alignas(__m128i) size_type w[std::size(v)];
-
 int main()
 {
     std::random_device rd;
@@ -68,16 +66,16 @@ int main()
     }
 
     {
-        std::copy(std::cbegin(v), std::cend(v), std::begin(w));
+        std::copy(std::cbegin(v), std::cend(v), std::begin(s));
         auto start = std::chrono::high_resolution_clock::now();
-        std::sort(std::begin(w), std::end(w));
+        std::sort(std::begin(s), std::end(s));
         std::cout << "timsort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
     }
 
     {
-        std::copy(std::cbegin(v), std::cend(v), std::begin(w));
+        std::copy(std::cbegin(v), std::cend(v), std::begin(s));
         auto start = std::chrono::high_resolution_clock::now();
-        std::stable_sort(std::begin(w), std::end(w));
+        std::stable_sort(std::begin(s), std::end(s));
         std::cout << "merge sort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
     }
 
@@ -133,7 +131,6 @@ int main()
         : [n]"r"(n), [v]"r"(v + 0), [offset]"r"(0),
           [bit0]"m"(bit[0]), [bit1]"m"(bit[1]), [bit2]"m"(bit[2]), [bit3]"m"(bit[3])
         : "memory", "cc",
-          "%ebx",
           "%xmm0"
         );
     #else
