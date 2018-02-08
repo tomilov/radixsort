@@ -22,32 +22,14 @@ alignas(32) size_type bit[bytes][1 << bits] = {0};
 
 alignas(__m128i) size_type w[std::size(v)];
 
-    #ifdef __linux__
-    #include <sched.h>
-    #endif
-
-    int main()
-    {
-    #ifdef __linux__
-        {
-            cpu_set_t m;
-            int status;
-
-            CPU_ZERO(&m);
-            CPU_SET(0, &m);
-            status = sched_setaffinity(0, sizeof(m), &m);
-            if (status != 0) {
-                perror("sched_setaffinity");
-            }
-        }
-    #endif
-
+int main()
+{
     std::random_device rd;
     std::mt19937 g(rd());
 
     {
         auto start = std::chrono::high_resolution_clock::now();
-        switch (1) {
+        switch (0) {
         case 0 : {
             std::generate(std::begin(v), std::end(v), [&] { return g(); });
             std::sort(std::begin(v), std::end(v));
@@ -85,18 +67,18 @@ alignas(__m128i) size_type w[std::size(v)];
     }
 
     {
-        //std::copy(std::cbegin(v), std::cend(v), std::begin(w));
+        std::copy(std::cbegin(v), std::cend(v), std::begin(w));
         auto start = std::chrono::high_resolution_clock::now();
-        std::sort(std::begin(v), std::end(v));
+        std::sort(std::begin(w), std::end(w));
         std::cout << "timsort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
-    }/*
+    }
 
     {
         std::copy(std::cbegin(v), std::cend(v), std::begin(w));
         auto start = std::chrono::high_resolution_clock::now();
         std::stable_sort(std::begin(w), std::end(w));
         std::cout << "merge sort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
-    }*/
+    }
 
     {
         auto start = std::chrono::high_resolution_clock::now();
