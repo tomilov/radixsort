@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iterator>
 #include <chrono>
+#include <functional>
 
 #include <cassert>
 
@@ -31,7 +32,7 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
         switch (0) {
         case 0 : {
-            std::generate(std::begin(v), std::end(v), [&] { return g(); });
+            std::generate(std::begin(v), std::end(v), std::ref(g));
             std::sort(std::begin(v), std::end(v));
             for (;;) {
                 auto last = std::unique(std::begin(v), std::end(v));
@@ -39,7 +40,7 @@ int main()
                     break;
                 }
                 std::cout << std::distance(last, std::end(v)) << " of " << std::size(v) << " remains" << std::endl;
-                std::generate(last, std::end(v), [&] { return g(); });
+                std::generate(last, std::end(v), std::ref(g));
                 std::sort(last, std::end(v));
                 std::inplace_merge(std::begin(v), last, std::end(v));
             }
@@ -152,19 +153,19 @@ int main()
         }
         std::cout << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
         for (const size_type & e : v) {
-            _mm_prefetch(&e + 65, _MM_HINT_T2);
+            _mm_prefetch(&e + 256, _MM_HINT_T2);
             s[bit[0][e & mask]++] = e;
         }
         for (const size_type & e : s) {
-            _mm_prefetch(&e + 128, _MM_HINT_T2);
+            _mm_prefetch(&e + 256, _MM_HINT_T2);
             v[bit[1][(e >> (1 * bits)) & mask]++] = e;
         }
         for (const size_type & e : v) {
-            _mm_prefetch(&e + 65, _MM_HINT_T2);
+            _mm_prefetch(&e + 256, _MM_HINT_T2);
             s[bit[2][(e >> (2 * bits)) & mask]++] = e;
         }
         for (const size_type & e : s) {
-            _mm_prefetch(&e + 65, _MM_HINT_T2);
+            _mm_prefetch(&e + 256, _MM_HINT_T2);
             v[bit[3][e >> (3 * bits)]++] = e;
         }
         std::cout << "radix sort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
