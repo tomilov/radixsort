@@ -88,7 +88,7 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
     #if 1
         const size_type m = std::size(v);
-        constexpr size_type l = sizeof(__m128i) / sizeof(size_type);
+        constexpr size_type l = sizeof(__m128i) / bytes;
         const size_type n = (m + (l - 1)) / l;
         asm
         (
@@ -98,43 +98,43 @@ int main()
         "lea 16(%[v]), %[v];"
 
         "vpextrb $0, %%xmm0, %[offset];"
-        "incl %[bit0](,%[offset],4);"
+        "incl %[byte0](,%[offset],4);"
         "vpextrb $1, %%xmm0, %[offset];"
-        "incl %[bit1](,%[offset],4);"
+        "incl %[byte1](,%[offset],4);"
         "vpextrb $2, %%xmm0, %[offset];"
-        "incl %[bit2](,%[offset],4);"
+        "incl %[byte2](,%[offset],4);"
         "vpextrb $3, %%xmm0, %[offset];"
-        "incl %[bit3](,%[offset],4);"
+        "incl %[byte3](,%[offset],4);"
         "vpextrb $4, %%xmm0, %[offset];"
-        "incl %[bit0](,%[offset],4);"
+        "incl %[byte0](,%[offset],4);"
         "vpextrb $5, %%xmm0, %[offset];"
-        "incl %[bit1](,%[offset],4);"
+        "incl %[byte1](,%[offset],4);"
         "vpextrb $6, %%xmm0, %[offset];"
-        "incl %[bit2](,%[offset],4);"
+        "incl %[byte2](,%[offset],4);"
         "vpextrb $7, %%xmm0, %[offset];"
-        "incl %[bit3](,%[offset],4);"
+        "incl %[byte3](,%[offset],4);"
         "vpextrb $8, %%xmm0, %[offset];"
-        "incl %[bit0](,%[offset],4);"
+        "incl %[byte0](,%[offset],4);"
         "vpextrb $9, %%xmm0, %[offset];"
-        "incl %[bit1](,%[offset],4);"
+        "incl %[byte1](,%[offset],4);"
         "vpextrb $10, %%xmm0, %[offset];"
-        "incl %[bit2](,%[offset],4);"
+        "incl %[byte2](,%[offset],4);"
         "vpextrb $11, %%xmm0, %[offset];"
-        "incl %[bit3](,%[offset],4);"
+        "incl %[byte3](,%[offset],4);"
         "vpextrb $12, %%xmm0, %[offset];"
-        "incl %[bit0](,%[offset],4);"
+        "incl %[byte0](,%[offset],4);"
         "vpextrb $13, %%xmm0, %[offset];"
-        "incl %[bit1](,%[offset],4);"
+        "incl %[byte1](,%[offset],4);"
         "vpextrb $14, %%xmm0, %[offset];"
-        "incl %[bit2](,%[offset],4);"
+        "incl %[byte2](,%[offset],4);"
         "vpextrb $15, %%xmm0, %[offset];"
-        "incl %[bit3](,%[offset],4);"
+        "incl %[byte3](,%[offset],4);"
 
         "dec %[n];"
         "jnz bloop;"
         :
         : [n]"r"(n), [v]"r"(v + 0), [offset]"r"(0),
-          [bit0]"m"(byte[0]), [bit1]"m"(byte[1]), [bit2]"m"(byte[2]), [bit3]"m"(byte[3])
+          [byte0]"m"(byte[0]), [byte1]"m"(byte[1]), [byte2]"m"(byte[2]), [byte3]"m"(byte[3])
         : "memory", "cc",
           "%xmm0"
         );
