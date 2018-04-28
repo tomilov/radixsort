@@ -15,14 +15,14 @@ using size_type = std::uint32_t;
 namespace
 {
 
-alignas(__m128i) size_type v[10000];
+alignas(__m128i) size_type v[10000000];
 alignas(__m128i) size_type s[std::size(v)];
 
 constexpr size_type bits = std::numeric_limits< unsigned char >::digits;
-constexpr size_type bytes = sizeof(size_type) / sizeof(unsigned char);
+constexpr size_type nbytes = sizeof(size_type) / sizeof(unsigned char);
 constexpr size_type mask = (1 << bits) - 1;
 
-alignas(64) size_type byte[bytes][1 << bits] = {};
+alignas(64) size_type byte[nbytes][1 << bits] = {};
 
 }
 
@@ -88,14 +88,14 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
     #if 1
         const size_type m = std::size(v);
-        constexpr size_type l = sizeof(__m128i) / bytes;
+        constexpr size_type l = sizeof(__m128i) / nbytes;
         const size_type n = (m + (l - 1)) / l;
         asm
         (
         "bloop:"
-        "prefetchnta 512(%[v]);"
+        "prefetcht1 384(%[v]);"
         "vmovdqa (%[v]), %%xmm0;"
-        "lea 16(%[v]), %[v];"
+        "add $16, %[v];"
 
         "vpextrb $0, %%xmm0, %[offset];"
         "incl %[byte0](,%[offset],4);"
@@ -140,34 +140,34 @@ int main()
         );
     #else
         for (const size_type & e : v) {
-            _mm_prefetch(&e + 65, _MM_HINT_T2);
-            ++bit[0][e & mask];
-            ++bit[1][(e >> (1 * bits)) & mask];
-            ++bit[2][(e >> (2 * bits)) & mask];
-            ++bit[3][e >> (3 * bits)];
+            _mm_prefetch(&e + 96, _MM_HINT_T2);
+            ++byte[0][e & mask];
+            ++byte[1][(e >> (1 * bits)) & mask];
+            ++byte[2][(e >> (2 * bits)) & mask];
+            ++byte[3][e >> (3 * bits)];
         }
     #endif
-        size_type sum[bytes] = {0, 0, 0, 0};
-        for (size_type b = 0; b < bytes; ++b) {
+        size_type sum[nbytes] = {0, 0, 0, 0};
+        for (size_type b = 0; b < nbytes; ++b) {
             for (size_type i = 0; i < (1 << bits); ++i) {
                 sum[b] += std::exchange(byte[b][i], sum[b]);
             }
         }
         std::cout << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
         for (const size_type & e : v) {
-            _mm_prefetch(&e + 256, _MM_HINT_T2);
+            _mm_prefetch(&e + 96, _MM_HINT_T2);
             s[byte[0][e & mask]++] = e;
         }
         for (const size_type & e : s) {
-            _mm_prefetch(&e + 256, _MM_HINT_T2);
+            _mm_prefetch(&e + 96, _MM_HINT_T2);
             v[byte[1][(e >> (1 * bits)) & mask]++] = e;
         }
         for (const size_type & e : v) {
-            _mm_prefetch(&e + 256, _MM_HINT_T2);
+            _mm_prefetch(&e + 96, _MM_HINT_T2);
             s[byte[2][(e >> (2 * bits)) & mask]++] = e;
         }
         for (const size_type & e : s) {
-            _mm_prefetch(&e + 256, _MM_HINT_T2);
+            _mm_prefetch(&e + 96, _MM_HINT_T2);
             v[byte[3][e >> (3 * bits)]++] = e;
         }
         std::cout << "radix sort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
