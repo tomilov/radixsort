@@ -15,14 +15,15 @@ using size_type = std::uint32_t;
 namespace
 {
 
-alignas(__m128i) size_type v[10000000];
-alignas(__m128i) size_type s[std::size(v)];
+constexpr size_type m = 80000;
+alignas(__m128i) size_type v[m];
+alignas(__m128i) size_type s[m];
 
-constexpr size_type bits = std::numeric_limits< unsigned char >::digits;
+constexpr size_type nbits = std::numeric_limits< unsigned char >::digits;
 constexpr size_type nbytes = sizeof(size_type) / sizeof(unsigned char);
-constexpr size_type mask = (1 << bits) - 1;
+constexpr size_type bmask = (1u << nbits) - 1;
 
-alignas(64) size_type byte[nbytes][1 << bits] = {};
+alignas(64) size_type byte[nbytes][1u << nbits] = {};
 
 }
 
@@ -42,7 +43,7 @@ int main()
                 if (last == std::end(v)) {
                     break;
                 }
-                std::cout << std::distance(last, std::end(v)) << " of " << std::size(v) << " remains" << std::endl;
+                std::cout << std::distance(last, std::end(v)) << " of " << m << " remains" << std::endl;
                 std::generate(last, std::end(v), std::ref(g));
                 std::sort(last, std::end(v));
                 std::inplace_merge(std::begin(v), last, std::end(v));
@@ -51,15 +52,15 @@ int main()
             break;
         }
         case 1 : {
-            for (size_type i = 1; i < std::size(v); ++i) {
+            for (size_type i = 1; i < m; ++i) {
                 v[i] = std::exchange(v[g() % i], i);
             }
             break;
         }
         case 2 : {
             std::iota(std::begin(v), std::end(v), 0);
-            for (size_type i = 0; i < std::size(v) - 1; ++i) {
-                std::swap(v[i + (g() % (std::size(v) - i))], v[i]);
+            for (size_type i = 0; i < m - 1; ++i) {
+                std::swap(v[i + (g() % (m - i))], v[i]);
             }
             break;
         }
@@ -87,7 +88,6 @@ int main()
     {
         auto start = std::chrono::high_resolution_clock::now();
     #if 1
-        const size_type m = std::size(v);
         constexpr size_type l = sizeof(__m128i) / nbytes;
         const size_type n = (m + (l - 1)) / l;
         asm
@@ -141,34 +141,34 @@ int main()
     #else
         for (const size_type & e : v) {
             _mm_prefetch(&e + 96, _MM_HINT_T2);
-            ++byte[0][e & mask];
-            ++byte[1][(e >> (1 * bits)) & mask];
-            ++byte[2][(e >> (2 * bits)) & mask];
+            ++byte[0][e & bmask];
+            ++byte[1][(e >> (1 * bits)) & bmask];
+            ++byte[2][(e >> (2 * bits)) & bmask];
             ++byte[3][e >> (3 * bits)];
         }
     #endif
         size_type sum[nbytes] = {0, 0, 0, 0};
         for (size_type b = 0; b < nbytes; ++b) {
-            for (size_type i = 0; i < (1 << bits); ++i) {
+            for (size_type i = 0; i < (1u << nbits); ++i) {
                 sum[b] += std::exchange(byte[b][i], sum[b]);
             }
         }
         std::cout << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
         for (const size_type & e : v) {
             _mm_prefetch(&e + 96, _MM_HINT_T2);
-            s[byte[0][e & mask]++] = e;
+            s[byte[0][e & bmask]++] = e;
         }
         for (const size_type & e : s) {
             _mm_prefetch(&e + 96, _MM_HINT_T2);
-            v[byte[1][(e >> (1 * bits)) & mask]++] = e;
+            v[byte[1][(e >> (1 * nbits)) & bmask]++] = e;
         }
         for (const size_type & e : v) {
             _mm_prefetch(&e + 96, _MM_HINT_T2);
-            s[byte[2][(e >> (2 * bits)) & mask]++] = e;
+            s[byte[2][(e >> (2 * nbits)) & bmask]++] = e;
         }
         for (const size_type & e : s) {
             _mm_prefetch(&e + 96, _MM_HINT_T2);
-            v[byte[3][e >> (3 * bits)]++] = e;
+            v[byte[3][e >> (3 * nbits)]++] = e;
         }
         std::cout << "radix sort " << std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - start).count() << std::endl;
         assert(std::is_sorted(std::cbegin(v), std::cend(v)));
